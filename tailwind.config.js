@@ -14,6 +14,8 @@ module.exports = {
     "flex-col",
     "space-y-2",
     "text-xs",
+    "text-sm",
+    "text-base",
     "max-w-xs",
     "mx-2",
     "items-start",
