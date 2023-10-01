@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <!-- component -->
+    <div class="flex-1 pb-4 justify-between flex flex-col h-screen">
+      <div id="messages" class="flex flex-col space-y-4 p-3 overflow-y-auto scrollbar-thumb-emerald scrollbar-thumb-rounded scrollbar-track-emerald-lighter scrollbar-w-2 scrolling-touch"></div>
+      <div class="border-t-2 border-gray-200 px-4 pt-4 mb-2 sm:mb-0">
+        <form class="relative flex" id="input-form">
+          <input type="text" placeholder="Write your message!" id="user-input" class="w-full focus:outline-none focus:placeholder-gray-400 text-gray-600 placeholder-gray-600 pl-3 bg-gray-200 rounded-md py-3" />
+          <div class="absolute right-0 items-center inset-y-0 hidden sm:flex">
+            <button type="submit" class="inline-flex items-center justify-center rounded-lg px-4 py-3 transition duration-500 ease-in-out text-white bg-emerald-500 hover:bg-emerald-400 focus:outline-none">
+              <span class="font-bold">Send</span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-6 w-6 ml-2 transform rotate-90">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const el = document.getElementById("messages");
+      function responseProcessingByBot() {
+        const chatMessage = document.createElement("div");
+        chatMessage.className = "chat-message";
+        chatMessage.id = "processing-chat-message";
+        chatMessage.innerHTML = `<div class="flex items-end">
+            <div class="flex flex-col space-y-2 text-xs max-w-xs mx-2 order-2 items-start">
+              <div><span class="px-4 py-2 rounded-lg inline-block rounded-bl-none bg-gray-100 text-gray-600 max-w-[80vw]">
+                <div class="flex items-center justify-center space-x-2 animate-pulse">
+                    <div class="w-2 h-2 bg-emerald-600 rounded-full"></div>
+                    <div class="w-2 h-2 bg-emerald-600 rounded-full"></div>
+                    <div class="w-2 h-2 bg-emerald-600 rounded-full"></div>
+                </div>
+                </span>
+              </div>
+            </div>
+            <img src="/static/bot.png" alt="My profile" class="w-6 h-6 rounded-full order-1" />
+          </div>`;
+        const conversation = document.getElementById("messages");
+        conversation.appendChild(chatMessage);
+        conversation.scrollTop = conversation.scrollHeight;
+      }
+
+      function responseProcessingByBotRemove() {
+        const chatMessage = document.getElementById("processing-chat-message");
+        chatMessage.remove();
+      }
+
+      function addMessageByBot(message) {
+        const chatMessage = document.createElement("div");
+        chatMessage.className = "chat-message";
+        chatMessage.innerHTML = `<div class="flex items-end">
+            <div class="flex flex-col space-y-2 text-xs max-w-xs mx-2 order-2 items-start">
+              <div><span class="px-4 py-2 rounded-lg inline-block rounded-bl-none bg-gray-100 text-gray-600 max-w-[80vw]">${message}</span></div>
+            </div>
+            <img src="/static/bot.png" alt="My profile" class="w-6 h-6 rounded-full order-1" />
+          </div>`;
+        const conversation = document.getElementById("messages");
+        conversation.appendChild(chatMessage);
+        conversation.scrollTop = conversation.scrollHeight;
+      }
+
+      function addMessageByUser(message) {
+        const chatMessage = document.createElement("div");
+        chatMessage.className = "chat-message";
+        chatMessage.innerHTML = `<div class="flex items-end justify-end">
+            <div class="flex flex-col space-y-2 text-xs max-w-xs mx-2 order-1 items-end">
+              <div><span class="user-message max-w-[80vw] px-4 py-2 rounded-lg inline-block rounded-br-none bg-emerald-600 text-white">${message}</span></div>
+            </div>
+            <img
+              src="/static/user.png"
+              alt="My profile"
+              class="w-6 h-6 rounded-full order-2"
+            />
+          </div>`;
+        const conversation = document.getElementById("messages");
+        conversation.appendChild(chatMessage);
+        conversation.scrollTop = conversation.scrollHeight;
+      }
+    </script>
+    <script>
+      document.addEventListener("readystatechange", (event) => {
+        if (event.target.readyState === "complete") {
+          addMessageByBot("Hi 👋 How can I help you?");
+        }
+      })
+    </script>
+    <script>
+      async function sendMessage() {
+        let pmv = "none";
+        var pm1 = document.getElementsByClassName("user-message");
+        if (pm1.length != 0) {
+          pmv = pm1[pm1.length - 1].textContent.trim();
+        }
+
+        // clear input value
+        const input = document.getElementById("user-input");
+        const message = input.value;
+        input.value = "";
+
+        // add message to the conversation
+        addMessageByUser(message);
+
+        // Show loader
+        responseProcessingByBot();
+
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: message,
+            pm: pmv,
+          }),
+        });
+
+        const responseData = await response.json();
+
+        // Create a new chat message element for the response and append it to the conversation div
+        responseProcessingByBotRemove();
+        addMessageByBot(responseData.message);
+      }
+
+      const inputForm = document.getElementById("input-form");
+
+      inputForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        sendMessage();
+      });
+    </script>
+  </body>
+</html>
